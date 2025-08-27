@@ -10,6 +10,46 @@ struct Gorevler {
     uint8_t tamamlandi;
 };
 
+const char* dosya_adi = "gorevler.txt";
+
+// Görevleri dosyaya kaydet
+void veriTabaninaKaydet(struct Gorevler* gorevler, int length) {
+    FILE* fp = fopen(dosya_adi, "w");
+    if (!fp) {
+        printf("Dosya acilamadi!\n");
+        return;
+    }
+
+    for (int i = 0; i < length; i++) {
+        fprintf(fp, "%s|%s|%u\n",
+                gorevler[i].gorevAdi,
+                gorevler[i].gorevIcerik,
+                gorevler[i].tamamlandi);
+    }
+
+    fclose(fp);
+}
+
+// Dosyadan görevleri oku
+int veriTabanindanOku(struct Gorevler* gorevler) {
+    FILE* fp = fopen(dosya_adi, "r");
+    if (!fp) {
+        return 0; // Dosya yoksa kayıt yok
+    }
+
+    int length = 0;
+    while (fscanf(fp, "%49[^|]|%99[^|]|%hhu\n",
+                  gorevler[length].gorevAdi,
+                  gorevler[length].gorevIcerik,
+                  &gorevler[length].tamamlandi) == 3) {
+        length++;
+        if (length >= MAX_GOREV) break;
+    }
+
+    fclose(fp);
+    return length;
+}
+
 void gorevleriGoster(struct Gorevler* gorevler, int length) {
     if (length == 0) {
         printf("\n--- Hic kayit yok! ---\n");
@@ -36,15 +76,19 @@ void gorevEkle(struct Gorevler* gorevler, int* length) {
 
     printf("Gorev adi: ");
     fgets(yeni.gorevAdi, sizeof(yeni.gorevAdi), stdin);
+    yeni.gorevAdi[strcspn(yeni.gorevAdi, "\n")] = '\0'; // \n sil
 
     printf("Gorev icerigi: ");
     fgets(yeni.gorevIcerik, sizeof(yeni.gorevIcerik), stdin);
+    yeni.gorevIcerik[strcspn(yeni.gorevIcerik, "\n")] = '\0'; // \n sil
 
     printf("Tamamlandi mi? (0: hayir, 1: evet): ");
     scanf("%hhu", &yeni.tamamlandi);
 
     gorevler[*length] = yeni;
     (*length)++;
+
+    veriTabaninaKaydet(gorevler, *length);
 
     printf("Yeni gorev eklendi!\n");
 }
@@ -70,14 +114,16 @@ void gorevSil(struct Gorevler* gorevler, int* length) {
     }
 
     (*length)--; // toplam kayit sayisini azalt
+    veriTabaninaKaydet(gorevler, *length);
+
     printf("Gorev silindi!\n");
 }
 
 int main() {
     struct Gorevler gorevler[MAX_GOREV];
-    int length = 0; // kayit sayisi
+    int length = veriTabanindanOku(gorevler); // program acilirken dosyadan oku
     int secim;
-
+    
     while (1) {
         printf("\n--- MENU ---\n");
         printf("1. Yeni kayit ekle\n");
@@ -107,33 +153,4 @@ int main() {
 
     return 0;
 }
-
-
-
-/*
-
-scanf("%hhu", &yeni.tamamlandi); 
-	
-	Neden hhu?
-
-	tamamlandi degiskeninin tipi "uint8_t"  bu aslinda unsigned char tipine denk gelir
-	%d -> int
-	%u -> unsigned int
-	%hhu -> unsigned char (8bit)
-	 
-
-
-
-*/
-
-
-
-
-
-
-
-
-
-
-
 
